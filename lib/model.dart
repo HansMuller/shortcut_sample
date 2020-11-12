@@ -40,13 +40,13 @@ class Model {
   }
 
   Model moveItem(Item movedItem, Offset offset) {
-    return replaceItem(
+    return _replaceItem(
       toReplace: movedItem,
       replaceWith: movedItem.copyWith(bounds: movedItem.bounds.shift(offset)),
     );
   }
 
-  Model replaceItem({required Item toReplace, required Item replaceWith}) {
+  Model _replaceItem({required Item toReplace, required Item replaceWith}) {
     return copyWith(
       items: items.map((Item item) {
         return item == toReplace ? replaceWith : item;
@@ -110,14 +110,13 @@ class Item {
     Color? foregroundColor,
     String? label,
   }) {
-    var item = Item(
+    return Item(
       bounds: bounds ?? this.bounds,
       selected: selected ?? this.selected,
       backgroundColor: backgroundColor ?? this.backgroundColor,
       foregroundColor: foregroundColor ?? this.foregroundColor,
       label: label ?? this.label,
     );
-    return item;
   }
 
   @override

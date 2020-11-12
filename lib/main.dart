@@ -15,7 +15,7 @@ class ItemView extends StatelessWidget {
       builder: (BuildContext context) {
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () {
+          onTapUp: (TapUpDetails details) {
             final Model model = ModelBinding.of<Model>(context);
             ModelBinding.update<Model>(context, model.toggleSelectionOfItem(item));
             Focus.of(context).requestFocus();
