@@ -12,6 +12,8 @@ class Model {
   final double height;
   final List<Item> items;
 
+  Item? get selectedItem => items.cast<Item?>().firstWhere((Item? item) => item!.selected, orElse: () => null);
+
   Model addItem(Item item) {
     return copyWith(
       backgroundColor: backgroundColor,
@@ -20,10 +22,34 @@ class Model {
     );
   }
 
-  Model moveItem(Item movedItem, Offset offset) {
+  Model removeItem(Item removedItem) {
+    return copyWith(
+      items: items.where((Item item) => item != removedItem).toList()
+    );
+  }
+
+  Model toggleSelectionOfItem(Item selectedItem) {
     return copyWith(
       items: items.map((Item item) {
-        return item == movedItem ? movedItem.copyWith(bounds: movedItem.bounds.shift(offset)) : item;
+        if (item == selectedItem) {
+          return item.copyWith(selected: !item.selected);
+        }
+        return item.selected ? item.copyWith(selected: false) : item;
+      }).toList(),
+    );
+  }
+
+  Model moveItem(Item movedItem, Offset offset) {
+    return replaceItem(
+      toReplace: movedItem,
+      replaceWith: movedItem.copyWith(bounds: movedItem.bounds.shift(offset)),
+    );
+  }
+
+  Model replaceItem({required Item toReplace, required Item replaceWith}) {
+    return copyWith(
+      items: items.map((Item item) {
+        return item == toReplace ? replaceWith : item;
       }).toList(),
     );
   }
@@ -65,12 +91,14 @@ class Model {
 class Item {
   const Item({
     required this.bounds,
+    this.selected = false,
     this.backgroundColor = Colors.white,
     this.foregroundColor = Colors.black,
     this.label = "",
   });
 
   final Rect bounds;
+  final bool selected;
   final Color backgroundColor;
   final Color foregroundColor;
   final String label;
@@ -82,12 +110,14 @@ class Item {
     Color? foregroundColor,
     String? label,
   }) {
-    return Item(
+    var item = Item(
       bounds: bounds ?? this.bounds,
+      selected: selected ?? this.selected,
       backgroundColor: backgroundColor ?? this.backgroundColor,
       foregroundColor: foregroundColor ?? this.foregroundColor,
       label: label ?? this.label,
     );
+    return item;
   }
 
   @override
@@ -98,6 +128,7 @@ class Item {
       return false;
     return other is Item
         && other.bounds == bounds
+        && other.selected == selected
         && other.backgroundColor == backgroundColor
         && other.foregroundColor == foregroundColor
         && other.label == label;
@@ -107,6 +138,7 @@ class Item {
   int get hashCode {
     return hashValues(
       bounds,
+      selected,
       backgroundColor,
       foregroundColor,
       label,
