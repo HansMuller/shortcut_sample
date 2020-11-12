@@ -20,9 +20,11 @@ class Model {
     );
   }
 
-  Model replaceItem({required Item oldItem, required Item newItem}) {
+  Model moveItem(Item movedItem, Offset offset) {
     return copyWith(
-      items: items.map((Item item) => item == oldItem ? newItem : item).toList(),
+      items: items.map((Item item) {
+        return item == movedItem ? movedItem.copyWith(bounds: movedItem.bounds.shift(offset)) : item;
+      }).toList(),
     );
   }
 

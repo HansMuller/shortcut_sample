@@ -30,11 +30,6 @@ class MoveAction extends ContextAction<MoveIntent> {
   @override
   void invoke(MoveIntent intent, [BuildContext? context]) {
     final Model model = ModelBinding.of<Model>(context!);
-    ModelBinding.update(context, model.replaceItem(
-      oldItem: item,
-      newItem: item.copyWith(
-        bounds: item.bounds.shift(offset * intent.offsetMultiplier),
-      ),
-    ));
+    ModelBinding.update(context, model.moveItem(item, offset * intent.offsetMultiplier));
   }
 }
