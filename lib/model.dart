@@ -20,6 +20,14 @@ class Model {
     );
   }
 
+  Model replaceItem({required Item oldItem, required Item newItem}) {
+    return copyWith(
+      items: items.map((Item item) => item == oldItem ? newItem : item).toList(),
+    );
+  }
+
+  Item? get selectedItem => items.cast<Item?>().firstWhere((Item? item) => item!.selected, orElse: () => null);
+
   Model selectItem(Item selectedItem) {
     return copyWith(
       items: items.map((Item item) {
