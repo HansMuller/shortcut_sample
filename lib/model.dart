@@ -26,18 +26,6 @@ class Model {
     );
   }
 
-  Item? get selectedItem => items.cast<Item?>().firstWhere((Item? item) => item!.selected, orElse: () => null);
-
-  Model selectItem(Item selectedItem) {
-    return copyWith(
-      items: items.map((Item item) {
-        if (item == selectedItem)
-          return item.copyWith(selected: !item.selected);
-        return item.selected ? item.copyWith(selected: false) : item;
-      }).toList(),
-    );
-  }
-
   Model copyWith({
     Color? backgroundColor,
     double? height,
@@ -75,14 +63,12 @@ class Model {
 class Item {
   const Item({
     required this.bounds,
-    this.selected = false,
     this.backgroundColor = Colors.white,
     this.foregroundColor = Colors.black,
     this.label = "",
   });
 
   final Rect bounds;
-  final bool selected;
   final Color backgroundColor;
   final Color foregroundColor;
   final String label;
@@ -96,7 +82,6 @@ class Item {
   }) {
     return Item(
       bounds: bounds ?? this.bounds,
-      selected: selected ?? this.selected,
       backgroundColor: backgroundColor ?? this.backgroundColor,
       foregroundColor: foregroundColor ?? this.foregroundColor,
       label: label ?? this.label,
@@ -111,7 +96,6 @@ class Item {
       return false;
     return other is Item
         && other.bounds == bounds
-        && other.selected == selected
         && other.backgroundColor == backgroundColor
         && other.foregroundColor == foregroundColor
         && other.label == label;
@@ -121,7 +105,6 @@ class Item {
   int get hashCode {
     return hashValues(
       bounds,
-      selected,
       backgroundColor,
       foregroundColor,
       label,

@@ -22,21 +22,18 @@ class MoveRightIntent extends MoveIntent {
 }
 
 class MoveAction extends ContextAction<MoveIntent> {
-  MoveAction({required this.model, required this.offset});
+  MoveAction({required this.item, required this.offset});
 
-  final Model model;
+  final Item item;
   final Offset offset;
 
   @override
-  bool isEnabled(MoveIntent intent) => model.selectedItem != null;
-
-  @override
   void invoke(MoveIntent intent, [BuildContext? context]) {
-    final Item selectedItem = model.selectedItem!;
-    ModelBinding.update(context!, model.replaceItem(
-      oldItem: selectedItem,
-      newItem: selectedItem.copyWith(
-        bounds: selectedItem.bounds.shift(offset * intent.offsetMultiplier),
+    final Model model = ModelBinding.of<Model>(context!);
+    ModelBinding.update(context, model.replaceItem(
+      oldItem: item,
+      newItem: item.copyWith(
+        bounds: item.bounds.shift(offset * intent.offsetMultiplier),
       ),
     ));
   }
