@@ -11,28 +11,24 @@ class ItemView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Builder(
-      builder: (BuildContext context) {
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapUp: (TapUpDetails details) {
-            final Model model = ModelBinding.of<Model>(context);
-            ModelBinding.update<Model>(context, model.toggleSelectionOfItem(item));
-            Focus.of(context).requestFocus();
-          },
-          child: Material(
-            color: item.backgroundColor,
-            elevation: 8,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
-              side: item.selected ? BorderSide(width: 2, color: Colors.blue) : BorderSide.none,
-            ),
-            child: Center(
-              child: Text(item.label),
-            ),
-          ),
-        );
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapUp: (TapUpDetails details) {
+        final Model model = ModelBinding.of<Model>(context);
+        ModelBinding.update<Model>(context, model.toggleSelectionOfItem(item));
+        Focus.of(context).requestFocus();
       },
+      child: Material(
+        color: item.backgroundColor,
+        elevation: 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+          side: item.selected ? BorderSide(width: 2, color: Colors.blue) : BorderSide.none,
+        ),
+        child: Center(
+          child: Text(item.label),
+        ),
+      ),
     );
   }
 }
