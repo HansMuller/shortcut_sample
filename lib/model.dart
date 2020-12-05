@@ -12,6 +12,8 @@ class Model {
   final double height;
   final List<Item> items;
 
+  Item? get selectedItem => items.cast<Item?>().firstWhere((Item? item) => item!.selected, orElse: () => null);
+
   Model addItem(Item item) {
     return copyWith(
       backgroundColor: backgroundColor,
@@ -20,12 +22,34 @@ class Model {
     );
   }
 
-  Model selectItem(Item selectedItem) {
+  Model removeItem(Item removedItem) {
+    return copyWith(
+      items: items.where((Item item) => item != removedItem).toList()
+    );
+  }
+
+  Model toggleSelectionOfItem(Item selectedItem) {
     return copyWith(
       items: items.map((Item item) {
-        if (item == selectedItem)
+        if (item == selectedItem) {
           return item.copyWith(selected: !item.selected);
+        }
         return item.selected ? item.copyWith(selected: false) : item;
+      }).toList(),
+    );
+  }
+
+  Model moveItem(Item movedItem, Offset offset) {
+    return _replaceItem(
+      toReplace: movedItem,
+      replaceWith: movedItem.copyWith(bounds: movedItem.bounds.shift(offset)),
+    );
+  }
+
+  Model _replaceItem({required Item toReplace, required Item replaceWith}) {
+    return copyWith(
+      items: items.map((Item item) {
+        return item == toReplace ? replaceWith : item;
       }).toList(),
     );
   }

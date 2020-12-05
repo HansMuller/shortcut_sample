@@ -1,6 +1,7 @@
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import 'actions.dart';
 import 'model.dart';
 
 class ItemView extends StatelessWidget {
@@ -14,7 +15,8 @@ class ItemView extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTapUp: (TapUpDetails details) {
         final Model model = ModelBinding.of<Model>(context);
-        ModelBinding.update<Model>(context, model.selectItem(item));
+        ModelBinding.update<Model>(context, model.toggleSelectionOfItem(item));
+        Focus.of(context).requestFocus();
       },
       child: Material(
         color: item.backgroundColor,
@@ -47,23 +49,47 @@ class ModelView extends StatelessWidget {
     return Scaffold(
       body: Scrollbar(
         child: SingleChildScrollView(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapUp: (TapUpDetails details) {
-              ModelBinding.update<Model>(context, addItemAt(model, details.localPosition));
+          child: Actions(
+            actions: {
+              MoveLeftIntent: MoveAction(
+                offset: const Offset(-10, 0),
+              ),
+              MoveRightIntent: MoveAction(
+                offset: const Offset(10, 0),
+              ),
+              MoveUpIntent: MoveAction(
+                offset: const Offset(0, -10),
+              ),
+              MoveDownIntent: MoveAction(
+                offset: const Offset(0, 10),
+              ),
+              DeleteIntent: CallbackAction<DeleteIntent>(
+                onInvoke: (DeleteIntent intent) {
+                  if (model.selectedItem != null) {
+                    ModelBinding.update(context, model.removeItem(model.selectedItem!));
+                  }
+                }
+              ),
             },
-            child: Container(
-              color: model.backgroundColor,
-              width: double.infinity,
-              height: model.height,
-              child: Stack(
-                children: model.items.map<Widget>((Item item) {
-                  return Positioned.fromRect(
-                    key: ValueKey<Item>(item),
-                    rect: item.bounds,
-                    child: ItemView(item: item),
-                  );
-                }).toList(),
+            child: Focus(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTapUp: (TapUpDetails details) {
+                  ModelBinding.update<Model>(context, addItemAt(model, details.localPosition));
+                },
+                child: Container(
+                  color: model.backgroundColor,
+                  width: double.infinity,
+                  height: model.height,
+                  child: Stack(
+                    children: model.items.map<Widget>((Item item) {
+                      return Positioned.fromRect(
+                        rect: item.bounds,
+                        child: ItemView(item: item),
+                      );
+                    }).toList(),
+                  ),
+                ),
               ),
             ),
           ),
@@ -76,6 +102,17 @@ class ModelView extends StatelessWidget {
 void main() {
   runApp(
     MaterialApp(
+      shortcuts: {
+        LogicalKeySet(LogicalKeyboardKey.arrowLeft) : MoveLeftIntent(),
+        LogicalKeySet(LogicalKeyboardKey.arrowRight) : MoveRightIntent(),
+        LogicalKeySet(LogicalKeyboardKey.arrowUp) : MoveUpIntent(),
+        LogicalKeySet(LogicalKeyboardKey.arrowDown) : MoveDownIntent(),
+        LogicalKeySet(LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.shift) : MoveLeftIntent(multiplier: 5.0),
+        LogicalKeySet(LogicalKeyboardKey.arrowRight, LogicalKeyboardKey.shift) : MoveRightIntent(multiplier: 5.0),
+        LogicalKeySet(LogicalKeyboardKey.arrowUp, LogicalKeyboardKey.shift) : MoveUpIntent(multiplier: 5.0),
+        LogicalKeySet(LogicalKeyboardKey.arrowDown, LogicalKeyboardKey.shift) : MoveDownIntent(multiplier: 5.0),
+        LogicalKeySet(LogicalKeyboardKey.keyD) : DeleteIntent(),
+      },
       title: 'Shortcut Sample',
       theme: ThemeData.from(colorScheme: ColorScheme.light()),
       home: ModelBinding<Model>(
