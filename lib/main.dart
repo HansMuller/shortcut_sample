@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'actions.dart';
 import 'model.dart';
 
+int nextItemIndex = 0;
+
 class ItemView extends StatelessWidget {
   const ItemView({ Key? key, required this.item }) : super(key: key);
 
@@ -14,9 +16,19 @@ class ItemView extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapUp: (TapUpDetails details) {
+        final Set<LogicalKeyboardKey> modifiers = LogicalKeyboardKey.collapseSynonyms(RawKeyboard.instance.keysPressed);
         final Model model = ModelBinding.of<Model>(context);
-        ModelBinding.update<Model>(context, model.toggleSelectionOfItem(item));
-        Focus.of(context).requestFocus();
+        late final Model updatedModel;
+        if (modifiers.contains(LogicalKeyboardKey.shift)) {
+          updatedModel = model.selectItem(item, SelectionMode.add);
+        } else if (modifiers.contains(LogicalKeyboardKey.control)) {
+          updatedModel = model.selectItem(item, SelectionMode.remove);
+        } else if (modifiers.contains(LogicalKeyboardKey.alt)) {
+          updatedModel = model.selectItem(item, SelectionMode.set);
+        } else {
+          updatedModel = model.selectItem(item, SelectionMode.toggle);
+        }
+        ModelBinding.update<Model>(context,updatedModel);
       },
       child: Material(
         color: item.backgroundColor,
@@ -38,7 +50,7 @@ class ModelView extends StatelessWidget {
     return model.addItem(
       Item(
         bounds: offset & Size(96, 32),
-        label: 'Item ${model.items.length}',
+        label: 'Item ${nextItemIndex++}',
       ),
     );
   }
@@ -65,31 +77,44 @@ class ModelView extends StatelessWidget {
               ),
               DeleteIntent: CallbackAction<DeleteIntent>(
                 onInvoke: (DeleteIntent intent) {
-                  if (model.selectedItem != null) {
-                    ModelBinding.update(context, model.removeItem(model.selectedItem!));
-                  }
+                  ModelBinding.update(context, model.removeSelectedItems());
+                },
+              ),
+              SelectAllIntent: CallbackAction<SelectAllIntent>(
+                onInvoke: (SelectAllIntent intent) {
+                  ModelBinding.update(context, model.selectAll());
+                },
+              ),
+              DeselectAllIntent: CallbackAction<DeselectAllIntent>(
+                onInvoke: (DeselectAllIntent intent) {
+                  ModelBinding.update(context, model.deselectAll());
                 }
               ),
             },
             child: Focus(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapUp: (TapUpDetails details) {
-                  ModelBinding.update<Model>(context, addItemAt(model, details.localPosition));
+              child: Builder(
+                builder: (BuildContext context) {
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTapUp: (TapUpDetails details) {
+                      ModelBinding.update<Model>(context, addItemAt(model, details.localPosition));
+                      Focus.of(context).requestFocus();
+                    },
+                    child: Container(
+                      color: model.backgroundColor,
+                      width: double.infinity,
+                      height: model.height,
+                      child: Stack(
+                        children: model.items.map<Widget>((Item item) {
+                          return Positioned.fromRect(
+                            rect: item.bounds,
+                            child: ItemView(item: item),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  );
                 },
-                child: Container(
-                  color: model.backgroundColor,
-                  width: double.infinity,
-                  height: model.height,
-                  child: Stack(
-                    children: model.items.map<Widget>((Item item) {
-                      return Positioned.fromRect(
-                        rect: item.bounds,
-                        child: ItemView(item: item),
-                      );
-                    }).toList(),
-                  ),
-                ),
               ),
             ),
           ),
@@ -112,6 +137,8 @@ void main() {
         LogicalKeySet(LogicalKeyboardKey.arrowUp, LogicalKeyboardKey.shift) : MoveUpIntent(multiplier: 5.0),
         LogicalKeySet(LogicalKeyboardKey.arrowDown, LogicalKeyboardKey.shift) : MoveDownIntent(multiplier: 5.0),
         LogicalKeySet(LogicalKeyboardKey.keyD) : DeleteIntent(),
+        LogicalKeySet(LogicalKeyboardKey.keyA, LogicalKeyboardKey.shift, LogicalKeyboardKey.control) : DeselectAllIntent(), // FAILS
+        LogicalKeySet(LogicalKeyboardKey.keyA, LogicalKeyboardKey.control) : SelectAllIntent(),
       },
       title: 'Shortcut Sample',
       theme: ThemeData.from(colorScheme: ColorScheme.light()),

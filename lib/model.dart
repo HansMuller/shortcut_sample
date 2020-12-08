@@ -1,6 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+enum SelectionMode {
+  set, // select an item, deselect all others
+  add, // select an item if it's not selected already
+  remove, // deselect an item if it's not selected already
+  toggle, // toggle an item's selected flag
+}
+
 class Model {
   const Model({
     this.backgroundColor = Colors.green,
@@ -10,60 +17,103 @@ class Model {
 
   final Color backgroundColor;
   final double height;
-  final List<Item> items;
+  final Iterable<Item> items;
 
-  Item? get selectedItem => items.cast<Item?>().firstWhere((Item? item) => item!.selected, orElse: () => null);
+  Iterable<Item> get selectedItems => items.where((Item item) => item.selected);
 
   Model addItem(Item item) {
     return copyWith(
       backgroundColor: backgroundColor,
       height: height,
-      items: items + <Item>[item],
+      items: items.toList() + <Item>[item],
     );
   }
 
-  Model removeItem(Item removedItem) {
-    return copyWith(
-      items: items.where((Item item) => item != removedItem).toList()
-    );
-  }
-
-  Model toggleSelectionOfItem(Item selectedItem) {
+  Model selectItem(Item selectedItem, SelectionMode mode) {
     return copyWith(
       items: items.map((Item item) {
+        late bool selected;
         if (item == selectedItem) {
-          return item.copyWith(selected: !item.selected);
+          switch (mode) {
+            case SelectionMode.set:
+            case SelectionMode.add:
+              selected = true;
+              break;
+            case SelectionMode.remove:
+              selected = false;
+              break;
+            case SelectionMode.toggle:
+              selected = !item.selected;
+              break;
+          }
+        } else {
+          switch (mode) {
+            case SelectionMode.set:
+              selected = false;
+              break;
+            case SelectionMode.add:
+            case SelectionMode.remove:
+            case SelectionMode.toggle:
+              selected = item.selected;
+              break;
+          }
         }
-        return item.selected ? item.copyWith(selected: false) : item;
-      }).toList(),
+        return item.selected == selected ? item : item.copyWith(selected: selected);
+      })
     );
   }
 
-  Model moveItem(Item movedItem, Offset offset) {
-    return _replaceItem(
-      toReplace: movedItem,
-      replaceWith: movedItem.copyWith(bounds: movedItem.bounds.shift(offset)),
-    );
-  }
-
-  Model _replaceItem({required Item toReplace, required Item replaceWith}) {
+  Model _selectAll(bool selected) {
     return copyWith(
       items: items.map((Item item) {
-        return item == toReplace ? replaceWith : item;
-      }).toList(),
+        return item.selected == selected ? item : item.copyWith(selected: selected);
+      }),
+    );
+  }
+  Model selectAll() => _selectAll(true);
+  Model deselectAll() => _selectAll(false);
+
+  Model removeSelectedItems() {
+    return copyWith(
+      items: items.where((Item item) => !item.selected),
+    );
+  }
+
+  Model moveSelectedItems(Offset offset) {
+    return copyWith(
+      items: items.map((Item item) {
+        return item.selected ? item.copyWith(bounds: item.bounds.shift(offset)) : item;
+      }),
     );
   }
 
   Model copyWith({
     Color? backgroundColor,
     double? height,
-    List<Item>? items,
+    Iterable<Item>? items,
   }) {
     return Model(
       backgroundColor: backgroundColor ?? this.backgroundColor,
       height: height ?? this.height,
       items: items ?? this.items,
     );
+  }
+
+  bool _itemsEquals(Iterable<Item> a, Iterable<Item>b) {
+    if (identical(a, b))
+      return true;
+    final Iterator<Item> iteratorA = a.iterator;
+    final Iterator<Item> iteratorB = b.iterator;
+    while(true) {
+      final bool nextA = iteratorA.moveNext();
+      final bool nextB = iteratorB.moveNext();
+      if (nextA != nextB)
+        return false;
+      if (nextA && nextB && iteratorA.current != iteratorB.current)
+        return false;
+      if (!nextA && !nextB)
+        return true;
+    }
   }
 
   @override
@@ -75,7 +125,7 @@ class Model {
     return other is Model
         && other.backgroundColor == backgroundColor
         && other.height == height
-        && listEquals<Item>(other.items, items);
+        && _itemsEquals(other.items, items);
   }
 
   @override
