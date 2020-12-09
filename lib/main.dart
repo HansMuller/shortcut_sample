@@ -63,33 +63,15 @@ class ModelView extends StatelessWidget {
         child: SingleChildScrollView(
           child: Actions(
             actions: {
-              MoveLeftIntent: MoveAction(
-                offset: const Offset(-10, 0),
-              ),
-              MoveRightIntent: MoveAction(
-                offset: const Offset(10, 0),
-              ),
-              MoveUpIntent: MoveAction(
-                offset: const Offset(0, -10),
-              ),
-              MoveDownIntent: MoveAction(
-                offset: const Offset(0, 10),
-              ),
-              DeleteIntent: CallbackAction<DeleteIntent>(
-                onInvoke: (DeleteIntent intent) {
-                  ModelBinding.update(context, model.removeSelectedItems());
-                },
-              ),
-              SelectAllIntent: CallbackAction<SelectAllIntent>(
-                onInvoke: (SelectAllIntent intent) {
-                  ModelBinding.update(context, model.selectAll());
-                },
-              ),
-              DeselectAllIntent: CallbackAction<DeselectAllIntent>(
-                onInvoke: (DeselectAllIntent intent) {
-                  ModelBinding.update(context, model.deselectAll());
-                }
-              ),
+              MoveLeftIntent: MoveAction(const Offset(-10, 0)),
+              MoveRightIntent: MoveAction(const Offset(10, 0)),
+              MoveUpIntent: MoveAction(const Offset(0, -10)),
+              MoveDownIntent: MoveAction(const Offset(0, 10)),
+              DeleteIntent: DeleteAction(),
+              SelectAllIntent: SelectAllAction(),
+              DeselectAllIntent: DeselectAllAction(),
+              UndoIntent: UndoAction(),
+              RedoIntent: RedoAction(),
             },
             child: Focus(
               child: Builder(
@@ -139,6 +121,8 @@ void main() {
         LogicalKeySet(LogicalKeyboardKey.keyD) : DeleteIntent(),
         LogicalKeySet(LogicalKeyboardKey.keyA, LogicalKeyboardKey.shift, LogicalKeyboardKey.control) : DeselectAllIntent(), // FAILS
         LogicalKeySet(LogicalKeyboardKey.keyA, LogicalKeyboardKey.control) : SelectAllIntent(),
+        LogicalKeySet(LogicalKeyboardKey.keyZ, LogicalKeyboardKey.control) : UndoIntent(),
+        LogicalKeySet(LogicalKeyboardKey.keyY, LogicalKeyboardKey.control) : RedoIntent(),
       },
       title: 'Shortcut Sample',
       theme: ThemeData.from(colorScheme: ColorScheme.light()),

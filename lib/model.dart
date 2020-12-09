@@ -59,7 +59,7 @@ class Model {
           }
         }
         return item.selected == selected ? item : item.copyWith(selected: selected);
-      })
+      }),
     );
   }
 
@@ -136,6 +136,9 @@ class Model {
       items,
     );
   }
+
+  @override
+  String toString() => 'Model($items)';
 }
 
 class Item {
@@ -193,6 +196,9 @@ class Item {
       label,
     );
   }
+
+  @override
+  String toString() => 'Item("$label", selected=$selected)';
 }
 
 // The classes below were lifted from
@@ -233,21 +239,58 @@ class ModelBinding<T> extends StatefulWidget {
     final _ModelBindingScope<T> scope = context.dependOnInheritedWidgetOfExactType<_ModelBindingScope<T>>()!;
     scope.modelBindingState.updateModel(newModel);
   }
+
+  static void undo<T>(BuildContext context) {
+    final _ModelBindingScope<T> scope = context.dependOnInheritedWidgetOfExactType<_ModelBindingScope<T>>()!;
+    return scope.modelBindingState.undo();
+  }
+
+  static void redo<T>(BuildContext context) {
+    final _ModelBindingScope<T> scope = context.dependOnInheritedWidgetOfExactType<_ModelBindingScope<T>>()!;
+    return scope.modelBindingState.redo();
+  }
 }
 
 class _ModelBindingState<T> extends State<ModelBinding<T>> {
-  late T currentModel;
+  late final List<T> models;
+  int modelIndex = 0;
+
+  T get currentModel => models[modelIndex];
 
   @override
   void initState() {
     super.initState();
-    currentModel = widget.initialModel;
+    models = List<T>.from(<T>[widget.initialModel]);
   }
 
   void updateModel(T newModel) {
-    if (newModel != currentModel) {
+    if (newModel != models.last) {
       setState(() {
-        currentModel = newModel;
+        assert(modelIndex + 1 <= models.length);
+        modelIndex += 1;
+        if (modelIndex == models.length) {
+          models.add(newModel);
+        } else {
+          models[modelIndex] = newModel;
+        }
+      });
+    }
+  }
+
+  void undo() {
+    assert(modelIndex >= 0 && modelIndex < models.length);
+    if (modelIndex > 0) {
+      setState(() {
+        modelIndex -= 1;
+      });
+    }
+  }
+
+  void redo() {
+    assert(modelIndex >= 0 && modelIndex < models.length);
+    if (modelIndex + 1 < models.length) {
+      setState(() {
+        modelIndex += 1;
       });
     }
   }
